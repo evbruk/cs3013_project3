@@ -20,6 +20,23 @@ void *cat(void * vargp)
 {
 	char * catName = (char*) vargp;
 	printf("Cat %s created! \n", catName);
+	int sleepTime = ((rand() % 250) + 50);
+	sleepTime = sleepTime * 1000;     				//converts from microseconds to milliseconds
+	print("[%s] Waiting for %d milliseconds before asking to enter the kitchen \n", catName, sleepTime);
+	usleep(sleepTime);
+	printf("[%s] Asking to enter the kitchen... \n" catName);
+	int permissionGranted = requestEntry(CAT_TYPE);
+		if ( permissionGranted )
+		{
+			pthread_mutex_lock(&kitchen_lock);
+
+			pets_in_kitchen[petsInKitchen] = catName;
+			petsInKitchen++;
+
+			pthread_mutex_unlock(&kitchen_lock);
+			//enter the kitchen
+			
+		}
 
 }
 
