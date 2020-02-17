@@ -9,14 +9,16 @@
 #define NUM_DOGS 9
 #define NUM_CATS 13
 
-void dog(char * dogName)
+void *dog(void * vargp)
 {
+	char * dogName = (char*) vargp;
 	printf("Dog %s created! \n", dogName);
 
 }
 
-void cat(char * catName)
+void *cat(void * vargp)
 {
+	char * catName = (char*) vargp;
 	printf("Cat %s created! \n", catName);
 
 }
@@ -33,7 +35,7 @@ int main(int argc, char * argv[])
 	pthread_t pickles_cat;
 	pthread_t cake_cat;
 	pthread_t cheeks_cat;
-	pthread_t mozz_cat
+	pthread_t mozz_cat;
 	pthread_t soda_cat;
 	pthread_t kitten_cat;
 	pthread_t luna_cat;
@@ -79,5 +81,8 @@ int main(int argc, char * argv[])
 	pthread_create(&yeller_dog, NULL, dog, "Yeller");
 	pthread_create(&brandy_dog, NULL, dog, "Brandy");
 	
+
+
+	while(1){}
 }
 
