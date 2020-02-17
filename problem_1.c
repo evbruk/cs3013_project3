@@ -8,12 +8,41 @@
 
 #define NUM_DOGS 9
 #define NUM_CATS 13
+#define	DOG_TYPE 0
+#define CAT_TYPE 1
+
+pthread_mutex_t kitchen_lock;
+int petsInKitchen;
+int kitchenOwner;
+char * pets_in_kitchen[13];
+
+int request_entry(int animalType);
 
 void *dog(void * vargp)
 {
 	char * dogName = (char*) vargp;
 	printf("Dog %s created! \n", dogName);
+	int sleepTime = (rand() % 250) + 50;
+	sleepTime *= 1000;
+	printf("[%s] Waiting for %d milliseconds before asking to enter the kitchen \n", dogName, sleepTime);
+	usleep(sleepTime);
+	printf("[%s] Asking to enter the kitchen... \n", dogName);
+	//this could potentially lock up the thread.
+	int permissionGranted = request_entry(DOG_TYPE);
+	if( permissionGranted )
+	{
+		//enter the kitchen.		
+		pthread_mutex_lock(&kitchen_lock);
 
+		pets_in_kitchen[petsInKitchen] = dogName;
+		petsInKitchen++;
+
+		pthread_mutex_unlock(&kitchen_lock);
+	}else
+	{
+		//wait on a condition variable?	
+	}
+	//we're in the kitchen
 }
 
 void *cat(void * vargp)
@@ -23,8 +52,35 @@ void *cat(void * vargp)
 
 }
 
+int request_entry(int animalType)
+{
+	pthread_mutex_lock(&kitchen_lock);
+	if(kitchenOwner == -1)
+	{
+		kitchenOwner = animalType;	
+	}
+	if(animalType == kitchenOwner)
+	{
+		//grant access
+		return 1;	
+	}else
+	{
+		//deny access
+		return 0;	
+	}
+	pthread_mutex_unlock(&kitchen_lock);
+}
+
 int main(int argc, char * argv[])
 {
+	int result = pthread_mutex_init(&kitchen_lock, NULL);
+	petsInKitchen = 0;
+	kitchenOwner = -1;
+	if(result != 0)
+	{
+		printf("problem creating the mutex! \n");	
+		return -1;	
+	}	
 	printf("Creating %d dogs & %d cats... \n", NUM_DOGS, NUM_CATS);
 
 	srand(time(0));
@@ -80,6 +136,8 @@ int main(int argc, char * argv[])
 	pthread_create(&rosie_dog, NULL, dog, "Rosie");
 	pthread_create(&yeller_dog, NULL, dog, "Yeller");
 	pthread_create(&brandy_dog, NULL, dog, "Brandy");
+	
+	
 	
 
 
