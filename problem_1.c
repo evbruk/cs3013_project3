@@ -15,8 +15,18 @@ pthread_mutex_t kitchen_lock;
 int petsInKitchen;
 int kitchenOwner;
 char * pets_in_kitchen[13];
+pthread_cond_t kitchenSwitch = PTHREAD_COND_INITIALIZER;
 
 int request_entry(int animalType);
+
+
+int print_kitchen()
+{
+	for(int i = 0; i < petsInKitchen; i++)
+	{
+		printf("%s \n", pets_in_kitchen[i]);	
+	}
+}
 
 void *dog(void * vargp)
 {
@@ -28,19 +38,30 @@ void *dog(void * vargp)
 	usleep(sleepTime);
 	printf("[%s] Asking to enter the kitchen... \n", dogName);
 	//this could potentially lock up the thread.
+	
+	pthread_mutex_lock(&kitchen_lock);
 	int permissionGranted = request_entry(DOG_TYPE);
 	if( permissionGranted )
 	{
 		//enter the kitchen.		
-		pthread_mutex_lock(&kitchen_lock);
-
+		
+		printf("[%s] Acquired the lock! \n", dogName);
 		pets_in_kitchen[petsInKitchen] = dogName;
 		petsInKitchen++;
 
 		pthread_mutex_unlock(&kitchen_lock);
 	}else
 	{
-		//wait on a condition variable?	
+		printf("[%s] Waiting on kitchen switch... \n", dogName);
+		//wait on a condition variable?
+		while( !request_entry(DOG_TYPE) )
+			
+			pthread_cond_wait(&kitchenSwitch, &kitchen_lock);
+		
+		//also add to kitchen
+		pets_in_kitchen[petsInKitchen] = dogName;
+		petsInKitchen++;
+		pthread_mutex_unlock(&kitchen_lock);
 	}
 	//we're in the kitchen
 }
@@ -51,27 +72,40 @@ void *cat(void * vargp)
 	printf("Cat %s created! \n", catName);
 	int sleepTime = ((rand() % 250) + 50);
 	sleepTime = sleepTime * 1000;     				//converts from microseconds to milliseconds
-	print("[%s] Waiting for %d milliseconds before asking to enter the kitchen \n", catName, sleepTime);
+	printf("[%s] Waiting for %d milliseconds before asking to enter the kitchen \n", catName, sleepTime);
 	usleep(sleepTime);
-	printf("[%s] Asking to enter the kitchen... \n" catName);
-	int permissionGranted = requestEntry(CAT_TYPE);
-		if ( permissionGranted )
-		{
-			pthread_mutex_lock(&kitchen_lock);
+	printf("[%s] Asking to enter the kitchen... \n", catName);
 
-			pets_in_kitchen[petsInKitchen] = catName;
-			petsInKitchen++;
-
-			pthread_mutex_unlock(&kitchen_lock);
-			//enter the kitchen
+	pthread_mutex_lock(&kitchen_lock);
+		
+	int permissionGranted = request_entry(CAT_TYPE);
+	if ( permissionGranted )
+	{
+		printf("[%s] Acquired the lock! \n", catName);
+		pets_in_kitchen[petsInKitchen] = catName;
+		petsInKitchen++;
+		print_kitchen();
+		pthread_mutex_unlock(&kitchen_lock);
+		//enter the kitchen
 			
-		}
+	}else
+	{
+		printf("[%s] Waiting on kitchen switch... \n", catName);
+		while( !request_entry(CAT_TYPE) )	
+			//printf("[%s] Waiting on kitchen switch... \n", catName);
+			pthread_cond_wait(&kitchenSwitch, &kitchen_lock);		
+		
+		//also add to kitchen
+		pets_in_kitchen[petsInKitchen] = catName;
+		petsInKitchen++;
+		pthread_mutex_unlock(&kitchen_lock);
+	}
 
 }
 
 int request_entry(int animalType)
 {
-	pthread_mutex_lock(&kitchen_lock);
+	//also check for maximum number of pets allowed, if it is met or exceeded, signal condition variable on process_kitchen()
 	if(kitchenOwner == -1)
 	{
 		kitchenOwner = animalType;	
@@ -84,8 +118,35 @@ int request_entry(int animalType)
 	{
 		//deny access
 		return 0;	
+	}	
+}
+
+
+void *process_kitchen()
+{
+	pthread_mutex_lock(&kitchen_lock);
+	if(petsInKitchen > 6)
+	{
+		printf("************ Animals in kitchen: ***********\n");
+		print_kitchen();
+
+		for(int i = 0; i < petsInKitchen; i++)
+		{
+			pets_in_kitchen[i] = "";	
+		}
+		petsInKitchen = 0;
+	
+		if (kitchenOwner == CAT_TYPE)
+		{
+			kitchenOwner = DOG_TYPE;	
+		}else if(kitchenOwner == DOG_TYPE)
+		{
+			kitchenOwner = CAT_TYPE;	
+		}
+		pthread_cond_signal(&kitchenSwitch);
+	
 	}
-	pthread_mutex_unlock(&kitchen_lock);
+	pthread_mutex_unlock(&kitchen_lock);		
 }
 
 int main(int argc, char * argv[])
@@ -101,6 +162,8 @@ int main(int argc, char * argv[])
 	printf("Creating %d dogs & %d cats... \n", NUM_DOGS, NUM_CATS);
 
 	srand(time(0));
+
+	pthread_t waterbowl_thread;
 
 	//cats	
 	pthread_t chico_cat;
@@ -154,7 +217,7 @@ int main(int argc, char * argv[])
 	pthread_create(&yeller_dog, NULL, dog, "Yeller");
 	pthread_create(&brandy_dog, NULL, dog, "Brandy");
 	
-	
+	pthread_create(&waterbowl_thread, NULL, process_kitchen, NULL);
 	
 
 
