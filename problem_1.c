@@ -61,7 +61,7 @@ void *dog(void * vargp)
 				bowlsAvailable++;
 				printf("[%s] %d dogs have drank \n", dogName, numVisited);
 				//the logic for "leaving" should go here.
-				if( bowlsAvailable == 2)
+				if( numVisited >= 2)
 				{
 					//we're done and we should signal the condition variable.
 					printf("Cats now rule the kitchen. \n");
@@ -117,7 +117,7 @@ void *cat(void * vargp)
 				bowlsAvailable++;
 				printf("[%s] %d cats have drank \n", catName, numVisited);
 	
-				if (bowlsAvailable == 2) 
+				if ( numVisited >= 2) 
 				{
 					//cats are gone and dogs can drink
 					kitchenOwner = DOG_TYPE;
