@@ -69,7 +69,7 @@ void *dog(void * vargp)
 					printf("Cats now rule the kitchen. \n");
 					kitchenOwner = CAT_TYPE;
 					numVisited = 0;
-					pthread_cond_signal(&kitchenSwitch);	
+					pthread_cond_broadcast(&kitchenSwitch);	
 				}
 				pthread_mutex_unlock(&kitchen_lock);
 			}
@@ -100,9 +100,6 @@ void *cat(void * vargp)
 	sleepTime = sleepTime * 1000;     				//converts from microseconds to milliseconds
 	
 	usleep(sleepTime);
-	
-
-	
 
 	while(1)
 	{
@@ -131,7 +128,7 @@ void *cat(void * vargp)
 					kitchenOwner = DOG_TYPE;
 					numVisited = 0;
 					printf("Dogs now rule the kitchen \n");
-					pthread_cond_signal(&kitchenSwitch);
+					pthread_cond_broadcast(&kitchenSwitch);
 				}
 				pthread_mutex_unlock(&kitchen_lock);				
 			}
