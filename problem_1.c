@@ -40,7 +40,7 @@ void *dog(void * vargp)
 	printf("[%s] Asking to enter the kitchen... \n", dogName);
 	//this could potentially lock up the thread.
 	
-	while(true)
+	while(1)
 	{
 		pthread_mutex_lock(&kitchen_lock);
 		if( request_entry(DOG_TYPE) )
@@ -77,7 +77,7 @@ void *dog(void * vargp)
 		
 		}
 		pthread_mutex_unlock(&kitchen_lock);
-		sleep(rand % 5);
+		sleep(rand() % 5);
 	}
 }
 
