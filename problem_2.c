@@ -32,11 +32,11 @@ sem_t moveLock;
 
 struct gradArguments
 {
-	int * moveArray;
-	int numMoves;
-	int id;
-	char * object;
-	char * studentName;
+	int * moveArray;			//list of moves that are 1-4
+	int numMoves;				//the moves listed in array above
+	int id;					// to reference grad students but not really used
+	char * object;       			// one of the values in the objectValue
+	char * studentName;			//the grad student's name
 };
 
 //bucket of 15 random items
@@ -141,7 +141,7 @@ void initStudents()
 //takes in moveArray, AND number of steps
 void * gradStudent(void * vargp)
 {
-	struct gradArguments *moveSet = (struct gradArguments *)vargp;
+	struct gradArguments *moveSet = (struct gradArguments *)vargp;				//cast it
 	printf("Grad student created! numMoves: %d \n", moveSet->numMoves);
 	
 	while(1)
@@ -152,7 +152,7 @@ void * gradStudent(void * vargp)
 			
 		for(int i = 0; i < moveSet->numMoves; i++)
 		{
-			sem_wait(&moveLock);
+			sem_wait(&moveLock);				//only one grad student can move at a time
 			switch(moveSet->moveArray[i])
 			{
 				case SQUEEZE:
