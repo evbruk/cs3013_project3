@@ -61,7 +61,7 @@ void *dog(void * vargp)
 				if( bowlsAvailable == 2)
 				{
 					//we're done and we should signal the condition variable.
-					printf("[%s] Switching kitchen ownership... \n", dogName);
+					printf("Cats now rule the kitchen. \n");
 					kitchenOwner = CAT_TYPE;
 					pthread_cond_signal(&kitchenSwitch);	
 				}
@@ -91,10 +91,11 @@ void *cat(void * vargp)
 	usleep(sleepTime);
 	printf("[%s] Asking to enter the kitchen... \n", catName);
 
-	pthread_mutex_lock(&kitchen_lock);
+	
 
 	while(1)
 	{
+		pthread_mutex_lock(&kitchen_lock);
 		if (request_entry(CAT_TYPE))
 		{
 			printf("[%s] is allowed to enter the kitchen ...\n", catName);
