@@ -85,30 +85,44 @@ void *cat(void * vargp)
 	printf("[%s] Asking to enter the kitchen... \n", catName);
 
 	pthread_mutex_lock(&kitchen_lock);
-		
-	int permissionGranted = request_entry(CAT_TYPE);
-	if ( permissionGranted )
-	{
-		printf("[%s] Acquired the lock! \n", catName);
-		pets_in_kitchen[petsInKitchen] = catName;
-		petsInKitchen++;
-		print_kitchen();
-		pthread_mutex_unlock(&kitchen_lock);
-		//enter the kitchen
-			
-	}else
-	{
-		printf("[%s] Waiting on kitchen switch... \n", catName);
-		while( !request_entry(CAT_TYPE) )	
-			//printf("[%s] Waiting on kitchen switch... \n", catName);
-			pthread_cond_wait(&kitchenSwitch, &kitchen_lock);		
-		
-		//also add to kitchen
-		pets_in_kitchen[petsInKitchen] = catName;
-		petsInKitchen++;
-		pthread_mutex_unlock(&kitchen_lock);
-	}
 
+	while(1)
+	{
+		if (request_entry(CAT_TYPE))
+		{
+			printf("[%s] is allowed to enter the kitchen ...\n", catName);
+			if (bowlsAvailable > 0)
+			{
+				printf("[%s] is drinking ...\n", catName);
+				//do some drinking
+				bowlsAvailable--;
+				pthread_mutex_unlock(&kitchen_lock);
+
+				usleep(10000);
+
+				pthread_mutex_lock(&kitchen_lock);
+				bowlsAvailable++;
+	
+				if (bowlsAvailable == 2) 
+				{
+					//cats are gone and dogs can drink
+					kitchenOwner = DOG_TYPE;
+					printf("Dogs now rule the kitchen \n");
+					pthread_cond_signal(&kitchenSwitch);
+				}
+				pthread_mutex_unlock(&kitchen_lock);				
+			}
+	
+		}else
+		{
+			while (!request_entry(CAT_TYPE))
+			{
+				pthread_cond_wait(&kitchenSwitch, &kitchen_lock);
+			}
+		}
+ 		pthread_mutex_unlock(&kitchen_lock);
+		sleep(rand() % 5);
+	}
 }
 
 int request_entry(int animalType)
