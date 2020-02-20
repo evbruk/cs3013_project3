@@ -18,6 +18,7 @@ char * pets_in_kitchen[13];
 pthread_cond_t kitchenSwitch = PTHREAD_COND_INITIALIZER;
 
 int request_entry(int animalType);
+int bowlsAvailable = 0;
 
 
 int print_kitchen()
@@ -40,7 +41,13 @@ void *dog(void * vargp)
 	//this could potentially lock up the thread.
 	
 	pthread_mutex_lock(&kitchen_lock);
+	if (bowlsAvailable > 0)
+	{
+		//do some drinking	
+	}
+	/*	
 	int permissionGranted = request_entry(DOG_TYPE);
+	
 	if( permissionGranted )
 	{
 		//enter the kitchen.		
@@ -62,8 +69,9 @@ void *dog(void * vargp)
 		pets_in_kitchen[petsInKitchen] = dogName;
 		petsInKitchen++;
 		pthread_mutex_unlock(&kitchen_lock);
-	}
-	//we're in the kitchen
+	}*/
+	pthread_mutex_unlock(&kitchen_lock);
+
 }
 
 void *cat(void * vargp)
