@@ -18,7 +18,7 @@ char * pets_in_kitchen[13];
 pthread_cond_t kitchenSwitch = PTHREAD_COND_INITIALIZER;
 
 int request_entry(int animalType);
-int bowlsAvailable = 0;
+int bowlsAvailable = 2;
 
 
 int print_kitchen()
@@ -40,38 +40,45 @@ void *dog(void * vargp)
 	printf("[%s] Asking to enter the kitchen... \n", dogName);
 	//this could potentially lock up the thread.
 	
-	pthread_mutex_lock(&kitchen_lock);
-	if (bowlsAvailable > 0)
+	while(true)
 	{
-		//do some drinking	
+		pthread_mutex_lock(&kitchen_lock);
+		if( request_entry(DOG_TYPE) )
+		{
+			printf("[%s] Allowed to enter the kitchen! \n", dogName);
+			if (bowlsAvailable > 0)
+			{
+				printf("[%s] is drinking... \n", dogName);
+				//do some drinking
+				bowlsAvailable--;		
+				pthread_mutex_unlock(&kitchen_lock);
+		
+				usleep(10000);
+
+				pthread_mutex_lock(&kitchen_lock);
+				bowlsAvailable++;
+				//the logic for "leaving" should go here.
+				if( bowlsAvailable == 2)
+				{
+					//we're done and we should signal the condition variable.
+					printf("[%s] Switching kitchen ownership... \n", dogName);
+					kitchenOwner = CAT_TYPE;
+					pthread_cond_signal(&kitchenSwitch);	
+				}
+				pthread_mutex_unlock(&kitchen_lock);
+			}
+		}else
+		{
+		//cats are drinking, wait on a switching condition variable.
+			printf("[%s] Waiting on kitchen switch... \n", dogName);
+			while( !request_entry(DOG_TYPE) )
+				//printf("[%s] Waiting on kitchen switch... \n", catName);
+				pthread_cond_wait(&kitchenSwitch, &kitchen_lock);		
+		
+		}
+		pthread_mutex_unlock(&kitchen_lock);
+		sleep(rand % 5);
 	}
-	/*	
-	int permissionGranted = request_entry(DOG_TYPE);
-	
-	if( permissionGranted )
-	{
-		//enter the kitchen.		
-		
-		printf("[%s] Acquired the lock! \n", dogName);
-		pets_in_kitchen[petsInKitchen] = dogName;
-		petsInKitchen++;
-
-		pthread_mutex_unlock(&kitchen_lock);
-	}else
-	{
-		printf("[%s] Waiting on kitchen switch... \n", dogName);
-		//wait on a condition variable?
-		while( !request_entry(DOG_TYPE) )
-			
-			pthread_cond_wait(&kitchenSwitch, &kitchen_lock);
-		
-		//also add to kitchen
-		pets_in_kitchen[petsInKitchen] = dogName;
-		petsInKitchen++;
-		pthread_mutex_unlock(&kitchen_lock);
-	}*/
-	pthread_mutex_unlock(&kitchen_lock);
-
 }
 
 void *cat(void * vargp)
