@@ -21,6 +21,13 @@ int grad2Steps = 0;
 int grad3Steps = 0;
 int grad4Steps = 0;
 
+struct gradArguments
+{
+	int * moveArray;
+	int numMoves;
+	int id;
+};
+
 void initStudent(int * gradArray, int numSteps)
 {
 	int index = 0;
@@ -86,8 +93,37 @@ void initStudents()
 	initStudent(grad2, grad2Steps);
 	printf("init grad3... %d steps\n", grad3Steps);	
 	initStudent(grad3, grad3Steps);
-	printf("init grad4... %d steps\n", grad4Steps);	
+	printf("init grad4... %d steps\n", grad4Steps);
 	initStudent(grad4, grad4Steps);
+}
+
+//takes in moveArray, AND number of steps
+void * gradStudent(void * vargp)
+{
+	struct gradArguments *moveSet = (struct gradArguments *)vargp;
+	printf("Grad student created! numMoves: %d \n", moveSet->numMoves);
+
+	for(int i = 0; i < moveSet->numMoves; i++)
+	{
+		switch(moveSet->moveArray[i])
+		{
+			case SQUEEZE:
+				printf("[%d] Attempting to squeeze... \n", moveSet->id);
+			break;
+			case SOAK:
+				printf("[%d] Attempting to soak... \n", moveSet->id);
+			break;
+			case SHOCK:
+				printf("[%d] Attempting to shock... \n", moveSet->id);
+			break;
+			case SCORCH:
+				printf("[%d] Attempting to scorch... \n", moveSet->id);
+			break;
+			default:
+			printf("[%d] unrecognized move! value: %d \n", moveSet->id, moveSet->moveArray[i]);
+			break;		
+		}	
+	}
 }
 
 int main(int argc, char * argv[])
@@ -96,8 +132,39 @@ int main(int argc, char * argv[])
 	initStudents();
 	
 
+	pthread_t gradStudent1;
+	pthread_t gradStudent2;
+	pthread_t gradStudent3;
+	pthread_t gradStudent4;
 	
+	struct gradArguments grad1Args;
+	grad1Args.moveArray = grad1;
+	grad1Args.numMoves = grad1Steps;
+	grad1Args.id = 1;
 
+	struct gradArguments grad2Args;
+	grad2Args.moveArray = grad2;
+	grad2Args.numMoves = grad2Steps;
+	grad2Args.id = 2;
+	
+	struct gradArguments grad3Args;
+	grad3Args.moveArray = grad3;
+	grad3Args.numMoves = grad3Steps;
+	grad3Args.id = 3;
+
+	struct gradArguments grad4Args;
+	grad4Args.moveArray = grad4;
+	grad4Args.numMoves = grad4Steps;
+	grad4Args.id = 4;	
+
+	//pthread_create(&archie_dog, NULL, dog, "Archie");
+	pthread_create(&gradStudent1, NULL, gradStudent, &grad1Args);
+	pthread_create(&gradStudent2, NULL, gradStudent, &grad2Args);
+	pthread_create(&gradStudent3, NULL, gradStudent, &grad3Args);
+	pthread_create(&gradStudent4, NULL, gradStudent, &grad4Args);
+
+
+	while(1){};
 }
 
 
