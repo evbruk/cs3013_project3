@@ -38,11 +38,12 @@ void *dog(void * vargp)
 	sleepTime *= 1000;
 	printf("[%s] Waiting for %d milliseconds before asking to enter the kitchen \n", dogName, sleepTime);
 	usleep(sleepTime);
-	printf("[%s] Asking to enter the kitchen... \n", dogName);
+	
 	//this could potentially lock up the thread.
 	
 	while(1)
 	{
+		printf("[%s] Asking to enter the kitchen... \n", dogName);
 		pthread_mutex_lock(&kitchen_lock);
 		if( request_entry(DOG_TYPE) )
 		{
@@ -81,7 +82,9 @@ void *dog(void * vargp)
 		
 		}
 		pthread_mutex_unlock(&kitchen_lock);
-		sleep(rand() % 5);
+		int sleepTime = rand() % 5;
+		printf("[%s] sleeping for %d seconds...\n", dogName, sleepTime);
+		sleep(sleepTime);
 	}
 }
 
@@ -93,12 +96,13 @@ void *cat(void * vargp)
 	sleepTime = sleepTime * 1000;     				//converts from microseconds to milliseconds
 	printf("[%s] Waiting for %d milliseconds before asking to enter the kitchen \n", catName, sleepTime);
 	usleep(sleepTime);
-	printf("[%s] Asking to enter the kitchen... \n", catName);
+	
 
 	
 
 	while(1)
 	{
+		printf("[%s] Asking to enter the kitchen... \n", catName);		
 		pthread_mutex_lock(&kitchen_lock);
 		if (request_entry(CAT_TYPE))
 		{
@@ -136,7 +140,9 @@ void *cat(void * vargp)
 			}
 		}
  		pthread_mutex_unlock(&kitchen_lock);
-		sleep(rand() % 5);
+		int sleepTime = rand() % 5;
+		printf("[%s] sleeping for %d seconds...\n", catName, sleepTime);
+		sleep(sleepTime);
 	}
 }
 
