@@ -15,6 +15,7 @@ pthread_mutex_t kitchen_lock;
 int petsInKitchen;
 int kitchenOwner;
 char * pets_in_kitchen[13];
+int numVisited = 0;
 pthread_cond_t kitchenSwitch = PTHREAD_COND_INITIALIZER;
 
 int request_entry(int animalType);
@@ -46,6 +47,7 @@ void *dog(void * vargp)
 		if( request_entry(DOG_TYPE) )
 		{
 			printf("[%s] Allowed to enter the kitchen! \n", dogName);
+			numVisited++; 
 			if (bowlsAvailable > 0)
 			{
 				printf("[%s] is drinking... \n", dogName);
@@ -57,12 +59,14 @@ void *dog(void * vargp)
 
 				pthread_mutex_lock(&kitchen_lock);
 				bowlsAvailable++;
+				printf("[%s] %d dogs have drank \n", dogName, numVisited);
 				//the logic for "leaving" should go here.
 				if( bowlsAvailable == 2)
 				{
 					//we're done and we should signal the condition variable.
 					printf("Cats now rule the kitchen. \n");
 					kitchenOwner = CAT_TYPE;
+					numVisited = 0;
 					pthread_cond_signal(&kitchenSwitch);	
 				}
 				pthread_mutex_unlock(&kitchen_lock);
@@ -99,6 +103,7 @@ void *cat(void * vargp)
 		if (request_entry(CAT_TYPE))
 		{
 			printf("[%s] is allowed to enter the kitchen ...\n", catName);
+			numVisited++;
 			if (bowlsAvailable > 0)
 			{
 				printf("[%s] is drinking ...\n", catName);
@@ -110,11 +115,13 @@ void *cat(void * vargp)
 
 				pthread_mutex_lock(&kitchen_lock);
 				bowlsAvailable++;
+				printf("[%s] %d cats have drank \n", catName, numVisited);
 	
 				if (bowlsAvailable == 2) 
 				{
 					//cats are gone and dogs can drink
 					kitchenOwner = DOG_TYPE;
+					numVisited = 0;
 					printf("Dogs now rule the kitchen \n");
 					pthread_cond_signal(&kitchenSwitch);
 				}
