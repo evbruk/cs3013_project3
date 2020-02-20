@@ -5,6 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <time.h>
+#include <semaphore.h>
 
 #define SQUEEZE 0
 #define SOAK 1
@@ -21,12 +22,25 @@ int grad2Steps = 0;
 int grad3Steps = 0;
 int grad4Steps = 0;
 
+sem_t squeezeLock;
+sem_t soakLock;
+sem_t shockLock;
+sem_t scorchLock;
+
+sem_t moveLock;
+
+
 struct gradArguments
 {
 	int * moveArray;
 	int numMoves;
 	int id;
+	char * object;
+	char * studentName;
 };
+
+//bucket of 15 random items
+char * objectBucket[] = {"sponge", "ball", "gum", "toothbrush", "2x4", "flip flop", "book", "jacket", "cup", "toothpaste", "shampoo", "pencil", "glass", "bottle", "jar"};
 
 void initStudent(int * gradArray, int numSteps)
 {
@@ -81,6 +95,33 @@ void initStudent(int * gradArray, int numSteps)
 	}
 }
 
+void printMoves(int * moveArray, int numMoves)
+{
+	for(int i = 0; i < numMoves; i++)
+	{
+		switch(moveArray[i])
+		{
+			case SQUEEZE:
+				printf("Squeeze");
+			break;
+			case SOAK:
+				printf("Soak");
+			break;
+			case SHOCK:
+				printf("Shock");
+			break;
+			case SCORCH:
+				printf("Scorch");
+			break;
+			default:
+				printf("DEFAULT...");
+			break;
+		}
+		if(i < numMoves-1)
+			printf(", ");	
+	}
+}
+
 void initStudents() 
 {
 	grad1Steps = (rand() % 3) + 1;
@@ -102,35 +143,56 @@ void * gradStudent(void * vargp)
 {
 	struct gradArguments *moveSet = (struct gradArguments *)vargp;
 	printf("Grad student created! numMoves: %d \n", moveSet->numMoves);
-
-	for(int i = 0; i < moveSet->numMoves; i++)
+	
+	while(1)
 	{
-		switch(moveSet->moveArray[i])
+		printf("%s is grabbing a %s and will perform [", moveSet->studentName, moveSet->object);
+		printMoves(moveSet->moveArray, moveSet->numMoves);
+		printf("] on it! \n");
+			
+		for(int i = 0; i < moveSet->numMoves; i++)
 		{
-			case SQUEEZE:
-				printf("[%d] Attempting to squeeze... \n", moveSet->id);
-			break;
-			case SOAK:
-				printf("[%d] Attempting to soak... \n", moveSet->id);
-			break;
-			case SHOCK:
-				printf("[%d] Attempting to shock... \n", moveSet->id);
-			break;
-			case SCORCH:
-				printf("[%d] Attempting to scorch... \n", moveSet->id);
-			break;
-			default:
-			printf("[%d] unrecognized move! value: %d \n", moveSet->id, moveSet->moveArray[i]);
-			break;		
-		}	
+			sem_wait(&moveLock);
+			switch(moveSet->moveArray[i])
+			{
+				case SQUEEZE:
+					printf("[%d] Attempting to squeeze... \n", moveSet->id);
+				break;
+				case SOAK:
+					printf("[%d] Attempting to soak... \n", moveSet->id);
+				break;
+				case SHOCK:
+					printf("[%d] Attempting to shock... \n", moveSet->id);
+				break;
+				case SCORCH:
+					printf("[%d] Attempting to scorch... \n", moveSet->id);
+				break;
+				default:
+				printf("[%d] Unrecognized move! value: %d \n", moveSet->id, moveSet->moveArray[i]);
+				break;		
+			}
+			sem_post(&moveLock);
+		}
+		//get a new item and new moves;
+		moveSet->object = objectBucket[(rand() % 14) + 1];
+		moveSet->numMoves = ((rand() % 3) + 1);
+		initStudent(moveSet->moveArray, moveSet->numMoves);
+		printf("%s has new moves on new object %s! [", moveSet->studentName, moveSet->object);
+		printMoves(moveSet->moveArray, moveSet->numMoves);
+		printf("]!\n");
 	}
+	
 }
 
 int main(int argc, char * argv[])
 {
 	srand(time(0));
 	initStudents();
-	
+	sem_init(&squeezeLock, 0, 1);
+	sem_init(&soakLock, 0, 1);
+	sem_init(&shockLock, 0, 1);
+	sem_init(&scorchLock, 0, 1);
+	sem_init(&moveLock, 0, 1);
 
 	pthread_t gradStudent1;
 	pthread_t gradStudent2;
@@ -141,21 +203,29 @@ int main(int argc, char * argv[])
 	grad1Args.moveArray = grad1;
 	grad1Args.numMoves = grad1Steps;
 	grad1Args.id = 1;
+	grad1Args.object = objectBucket[(rand() % 14) + 1];
+	grad1Args.studentName = "Greg";
 
 	struct gradArguments grad2Args;
 	grad2Args.moveArray = grad2;
 	grad2Args.numMoves = grad2Steps;
 	grad2Args.id = 2;
-	
+	grad2Args.object = objectBucket[(rand() % 14) + 1];
+	grad2Args.studentName = "Samantha";	
+
 	struct gradArguments grad3Args;
 	grad3Args.moveArray = grad3;
 	grad3Args.numMoves = grad3Steps;
 	grad3Args.id = 3;
+	grad3Args.object = objectBucket[(rand() % 14) + 1];
+	grad3Args.studentName = "Alice";
 
 	struct gradArguments grad4Args;
 	grad4Args.moveArray = grad4;
 	grad4Args.numMoves = grad4Steps;
-	grad4Args.id = 4;	
+	grad4Args.id = 4;
+	grad4Args.object = objectBucket[(rand() % 14) + 1];	
+	grad4Args.studentName = "Bob";
 
 	//pthread_create(&archie_dog, NULL, dog, "Archie");
 	pthread_create(&gradStudent1, NULL, gradStudent, &grad1Args);
