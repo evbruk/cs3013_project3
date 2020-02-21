@@ -22,12 +22,23 @@ int grad2Steps = 0;
 int grad3Steps = 0;
 int grad4Steps = 0;
 
+/*
 sem_t squeezeLock;
 sem_t soakLock;
 sem_t shockLock;
 sem_t scorchLock;
+*/
+sem_t gregLock;
+sem_t bobLock;
+sem_t aliceLock;
+sem_t samanthaLock;
 
 sem_t moveLock;
+
+int gregState = -1;
+int bobState = -1;
+int aliceState = -1;
+int samanthaState = -1;
 
 
 struct gradArguments
@@ -70,31 +81,67 @@ void initStudent(int * gradArray, int numSteps)
 			index++;
 		}
 	}
-/*
-	printf("Value of steps:\n");
-	for(int i = 0; i<numSteps; i++)
-	{
-		switch(gradArray[i])
-		{
-			case SQUEEZE:
-				printf("Squeeze\n");
-			break;
-			case SOAK:
-				printf("Soak\n");
-			break;
-			case SHOCK:
-				printf("Shock\n");
-			break;
-			case SCORCH:
-				printf("Scorch\n");
-			break;
-			default:
-				printf("DEFAULT...\n");
-			break;
-		}
-	
-	}*/
 }
+
+int * getMyState(int id)
+{
+	switch(id)
+	{
+		case 1:
+			return &gregState;
+		break;
+		case 2:
+			return &samanthaState;
+		break;
+		case 3:
+			return &aliceState;
+		break;
+		case 4:
+			return &bobState;
+		break;	
+	}
+}
+
+sem_t * getMySemaphore(int id)
+{
+	switch(id)
+	{
+		case 1:
+			return &gregLock;
+		break;
+		case 2:
+			return &samanthaLock;
+		break;
+		case 3:
+			return &aliceLock;
+		break;
+		case 4:
+			return &bobLock;
+		break;	
+	}
+}
+
+//check each grad student's state and check if it is equal to the supplied stationId
+//if it is, return that students ID. if it is not, return -1;
+int isTaken(int stationId)
+{
+	if(bobState == stationId)
+	{
+		return 4;	
+	}else if(aliceState == stationId)
+	{
+		return 3;	
+	}else if(samanthaState == stationId)
+	{
+		return 2;	
+	}else if(gregState == stationId)
+	{
+		return 1;	
+	}
+
+	return -1;
+}
+
 
 void printMoves(int * moveArray, int numMoves)
 {
@@ -139,27 +186,26 @@ void initStudents()
 	initStudent(grad4, grad4Steps);
 }
 
-sem_t * getSemaphoreFromMove(int moveId)
+void printAction(char * studentName, char * objectName, int moveId)
 {
 	switch(moveId)
 	{
 		case SQUEEZE:
-			return &squeezeLock;		
+			printf("[%s] Squeezing %s... \n", studentName, objectName);
 		break;
 		case SOAK:
-			return &soakLock;
+			printf("[%s] Soaking %s... \n", studentName, objectName);
 		break;
 		case SHOCK:
-			return &shockLock;
+			printf("[%s] Shocking %s... \n", studentName, objectName);
 		break;
 		case SCORCH:
-			return &scorchLock;
+			printf("[%s] Scorching %s... \n", studentName, objectName);					
 		break;
-		default:
-		printf("[%s] Unrecognized move! value: %d \n", moveSet->studentName, moveSet->moveArray[i]);
-		break;		
 	}
+			
 }
+
 //takes in moveArray, AND number of steps
 //Each thread runs their own copy of this function!
 void * gradStudent(void * vargp)
@@ -176,12 +222,69 @@ void * gradStudent(void * vargp)
 		//condition to keep looping
 		int experimenting = 1;
 		int moveIndex = 0;
+		int * myState = 0;	
 		while(experimenting)
 		{
-				sem_wait(&moveLock);				
-				currentStation = moveSet->moveArray;
+				printf("[%s] is waiting to move... \n", moveSet->studentName);
+				sem_wait(&moveLock);
+				myState = getMyState(moveSet->id);
+	
+				sem_t * mySemaphore = getMySemaphore(moveSet->id);				
+				sem_wait(mySemaphore);
+				printf("it is %s's turn to move. \n", moveSet->studentName);
+				if(*myState == -1)
+				{
+					//it is my first move;				
+									
+				}
+				int desiredStation = moveSet->moveArray[moveIndex];
+				int taken = 0;
+				int isTakenId = isTaken(desiredStation);
 				
+				if(isTakenId > 0 && isTakenId != moveSet->id)
+				{
+					taken = 1;
+					sem_t * waitOnThis = getMySemaphore(isTakenId);
+					printf("[%s] is waiting on student with id: %d\n", moveSet->studentName, isTakenId);
+					sem_wait(waitOnThis);
+					//update my state because the other guy is done.
+					*myState = desiredStation;
+					printAction(moveSet->studentName, moveSet->object, desiredStation);
+					usleep(((rand() % 250) + 1) * 1000);
+					
+					moveIndex++;
+					sem_post(waitOnThis);				
+				}else if(isTakenId == moveSet->id)
+				{
+					//we already hold our desired station.
+					printAction(moveSet->studentName, moveSet->object, desiredStation);
+					usleep(((rand() % 250) + 1) * 1000);
+					moveIndex++;
+					printf("[%s] holds station %d... \n", moveSet->studentName, desiredStation);				
+				}else{
+					//it is not taken so we should take it.
+					
+					*myState = desiredStation;
+					printAction(moveSet->studentName, moveSet->object, desiredStation);
+					usleep(((rand() % 250) + 1) * 1000);
+					moveIndex++;
+					//sleep?				
+				}
+
+				sem_post(mySemaphore);
 				sem_post(&moveLock);
+
+				if( moveIndex > moveSet->numMoves)
+				{
+					moveSet->object = objectBucket[(rand() % 14) + 1];
+					moveSet->numMoves = ((rand() % 3) + 1);
+					initStudent(moveSet->moveArray, moveSet->numMoves);
+					printf("%s has new moves on new object %s! [", moveSet->studentName, moveSet->object);
+					printMoves(moveSet->moveArray, moveSet->numMoves);
+					printf("]!\n");
+					moveIndex = 0;
+				}
+				sleep(5);
 				//see what the other students are doing and make a decision?
 		}
 		/*
@@ -229,12 +332,13 @@ void * gradStudent(void * vargp)
 			sem_post(&moveLock);
 		}*/
 		//get a new item and new moves;
+		/*
 		moveSet->object = objectBucket[(rand() % 14) + 1];
 		moveSet->numMoves = ((rand() % 3) + 1);
 		initStudent(moveSet->moveArray, moveSet->numMoves);
 		printf("%s has new moves on new object %s! [", moveSet->studentName, moveSet->object);
 		printMoves(moveSet->moveArray, moveSet->numMoves);
-		printf("]!\n");
+		printf("]!\n");*/
 	}
 	
 }
@@ -245,10 +349,10 @@ int main(int argc, char * argv[])
 {
 	srand(time(0));
 	initStudents();
-	sem_init(&squeezeLock, 0, 1);
-	sem_init(&soakLock, 0, 1);
-	sem_init(&shockLock, 0, 1);
-	sem_init(&scorchLock, 0, 1);
+	sem_init(&bobLock, 0, 1);
+	sem_init(&samanthaLock, 0, 1);
+	sem_init(&aliceLock, 0, 1);
+	sem_init(&gregLock, 0, 1);
 	sem_init(&moveLock, 0, 1);
 
 	pthread_t gradStudent1;
