@@ -2,4 +2,29 @@ Eva Bruklich & Noah Parker
 
 Problem 1 Explanation:
 
+Cats Drinking Stats: 
+Chico: 10 
+Mittens: 11 
+Pickles: 10 
+Cake: 12 
+Cheeks: 15 
+Mozz: 17 
+Soda: 12 
+Kitten: 14 
+Luna: 17 
+Violet: 11 
+Honeymust: 19 
+Buster: 9 
+Munchkin: 13 
+-------------------------
+Dogs Drinking Stats: 
+Archie: 18 
+Toby: 21 
+Brady: 19 
+Tom: 19 
+Buddy: 19 
+Princess: 21 
+Rosie: 19 
+Yeller: 17 
+Brandy: 18 
 
