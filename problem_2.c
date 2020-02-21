@@ -231,7 +231,7 @@ void * gradStudent(void * vargp)
 	
 				sem_t * mySemaphore = getMySemaphore(moveSet->id);				
 				sem_wait(mySemaphore);
-				printf("it is %s's turn to move. \n", moveSet->studentName);
+				//printf("it is %s's turn to move. \n", moveSet->studentName);
 				if(*myState == -1)
 				{
 					//it is my first move;				
@@ -245,7 +245,7 @@ void * gradStudent(void * vargp)
 				{
 					taken = 1;
 					sem_t * waitOnThis = getMySemaphore(isTakenId);
-					printf("[%s] is waiting on student with id: %d\n", moveSet->studentName, isTakenId);
+					//printf("[%s] is waiting on student with id: %d\n", moveSet->studentName, isTakenId);
 					sem_wait(waitOnThis);
 					//update my state because the other guy is done.
 					*myState = desiredStation;
@@ -260,7 +260,7 @@ void * gradStudent(void * vargp)
 					printAction(moveSet->studentName, moveSet->object, desiredStation);
 					usleep(((rand() % 250) + 1) * 1000);
 					moveIndex++;
-					printf("[%s] holds station %d... \n", moveSet->studentName, desiredStation);				
+					//printf("[%s] holds station %d... \n", moveSet->studentName, desiredStation);				
 				}else{
 					//it is not taken so we should take it.
 					
@@ -277,7 +277,7 @@ void * gradStudent(void * vargp)
 				if( moveIndex > moveSet->numMoves)
 				{
 					moveSet->object = objectBucket[(rand() % 14) + 1];
-					moveSet->numMoves = ((rand() % 3) + 1);
+					moveSet->numMoves = ((rand() % 4) + 1);
 					initStudent(moveSet->moveArray, moveSet->numMoves);
 					printf("%s has new moves on new object %s! [", moveSet->studentName, moveSet->object);
 					printMoves(moveSet->moveArray, moveSet->numMoves);
@@ -287,60 +287,7 @@ void * gradStudent(void * vargp)
 				sleep(5);
 				//see what the other students are doing and make a decision?
 		}
-		/*
-		for(int i = 0; i < moveSet->numMoves; i++)
-		{
-
-			sem_wait(&moveLock);				//only one grad student can move at a time
-
-			int sleepValue = (rand() % 250) + 1;
-
-			switch(moveSet->moveArray[i])
-			{
-				case SQUEEZE:
-					printf("[%s] waiting to squeeze %s... \n", moveSet->studentName, moveSet->object);					
-					sem_wait(&squeezeLock);
-					printf("[%s] Squeezing %s... \n", moveSet->studentName, moveSet->object);
-					usleep(sleepValue*1000);
-					sem_post(&squeezeLock);				
-				break;
-				case SOAK:
-					printf("[%s] waiting to soak %s... \n", moveSet->studentName, moveSet->object);					
-					sem_wait(&soakLock);
-					printf("[%s] Soaking %s... \n", moveSet->studentName, moveSet->object);
-					usleep(sleepValue*1000);					
-					sem_post(&soakLock);				
-				break;
-				case SHOCK:
-					printf("[%s] waiting to shock %s... \n", moveSet->studentName, moveSet->object);
-					sem_wait(&shockLock);
-					printf("[%s] Shocking %s... \n", moveSet->studentName, moveSet->object);
-					usleep(sleepValue*1000);
-					sem_post(&shockLock);				
-				break;
-				case SCORCH:
-					printf("[%s] waiting to scorch %s... \n", moveSet->studentName, moveSet->object);					
-					sem_wait(&scorchLock);
-					printf("[%s] Scorching %s... \n", moveSet->studentName, moveSet->object);					
-					usleep(sleepValue*1000);	
-					sem_post(&scorchLock);				
-				break;
-				default:
-				printf("[%s] Unrecognized move! value: %d \n", moveSet->studentName, moveSet->moveArray[i]);
-				break;		
-			}
-			sem_post(&moveLock);
-		}*/
-		//get a new item and new moves;
-		/*
-		moveSet->object = objectBucket[(rand() % 14) + 1];
-		moveSet->numMoves = ((rand() % 3) + 1);
-		initStudent(moveSet->moveArray, moveSet->numMoves);
-		printf("%s has new moves on new object %s! [", moveSet->studentName, moveSet->object);
-		printMoves(moveSet->moveArray, moveSet->numMoves);
-		printf("]!\n");*/
 	}
-	
 }
 
 
