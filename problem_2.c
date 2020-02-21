@@ -22,12 +22,6 @@ int grad2Steps = 0;
 int grad3Steps = 0;
 int grad4Steps = 0;
 
-/*
-sem_t squeezeLock;
-sem_t soakLock;
-sem_t shockLock;
-sem_t scorchLock;
-*/
 sem_t gregLock;
 sem_t bobLock;
 sem_t aliceLock;
@@ -73,7 +67,7 @@ void initStudent(int * gradArray, int numSteps)
 			if(gradArray[i] == value)
 			{
 				unique = 0;
-			}		
+			}
 		}
 		if(unique)
 		{
@@ -234,7 +228,7 @@ void * gradStudent(void * vargp)
 				//printf("it is %s's turn to move. \n", moveSet->studentName);
 				if(*myState == -1)
 				{
-					//it is my first move;				
+					//it is my first move;		
 									
 				}
 				int desiredStation = moveSet->moveArray[moveIndex];
@@ -284,7 +278,7 @@ void * gradStudent(void * vargp)
 					printf("]!\n");
 					moveIndex = 0;
 				}
-				sleep(5);
+				//sleep(5);
 				//see what the other students are doing and make a decision?
 		}
 	}
