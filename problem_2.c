@@ -139,7 +139,29 @@ void initStudents()
 	initStudent(grad4, grad4Steps);
 }
 
+sem_t * getSemaphoreFromMove(int moveId)
+{
+	switch(moveId)
+	{
+		case SQUEEZE:
+			return &squeezeLock;		
+		break;
+		case SOAK:
+			return &soakLock;
+		break;
+		case SHOCK:
+			return &shockLock;
+		break;
+		case SCORCH:
+			return &scorchLock;
+		break;
+		default:
+		printf("[%s] Unrecognized move! value: %d \n", moveSet->studentName, moveSet->moveArray[i]);
+		break;		
+	}
+}
 //takes in moveArray, AND number of steps
+//Each thread runs their own copy of this function!
 void * gradStudent(void * vargp)
 {
 	struct gradArguments *moveSet = (struct gradArguments *)vargp;				//cast it
@@ -150,13 +172,25 @@ void * gradStudent(void * vargp)
 		printf("%s is grabbing a %s and will perform [", moveSet->studentName, moveSet->object);
 		printMoves(moveSet->moveArray, moveSet->numMoves);
 		printf("] on it! \n");
-			
+		
+		//condition to keep looping
+		int experimenting = 1;
+		int moveIndex = 0;
+		while(experimenting)
+		{
+				sem_wait(&moveLock);				
+				currentStation = moveSet->moveArray;
+				
+				sem_post(&moveLock);
+				//see what the other students are doing and make a decision?
+		}
+		/*
 		for(int i = 0; i < moveSet->numMoves; i++)
 		{
 
 			sem_wait(&moveLock);				//only one grad student can move at a time
 
-			int sleepValue = rand() % 250;
+			int sleepValue = (rand() % 250) + 1;
 
 			switch(moveSet->moveArray[i])
 			{
@@ -193,7 +227,7 @@ void * gradStudent(void * vargp)
 				break;		
 			}
 			sem_post(&moveLock);
-		}
+		}*/
 		//get a new item and new moves;
 		moveSet->object = objectBucket[(rand() % 14) + 1];
 		moveSet->numMoves = ((rand() % 3) + 1);
@@ -204,6 +238,8 @@ void * gradStudent(void * vargp)
 	}
 	
 }
+
+
 
 int main(int argc, char * argv[])
 {
