@@ -1,15 +1,4 @@
-each student looks at current move
-each student has a state and that represents what station they are using (each station has an integer assigned to it)
-when grad student looks at move, looks to see if any other grad students' state matches their move 
-if someone else is using our station, we wait on their semaphore
-if no one is, set grad student state to that station and then we sleep
-while a grad student is using a station their semaphore is down 
-when they wake up, they signal to the rest of the semaphore and free up the state
-continues as they check to see if their next move matches any other student's state
-
 
 We approached Problem 2 by using semaphores to solve it. A semaphore was created at each student with threads associated with it which contain the information about the object and the random set of instructions. We had each station represented by a number 1-4. Each student has a state which represents what station they are using, indicating the station by its respective number. When the grad student is ready to move, it looks at its next move and checks the state of all the other grad students' states to see if theirs matches. If someone else is using the required station, we will wait on the grad student's semaphore. If no one's state matches the one required, the grad student's new state will be set to the new one they move to. Once a grad student is done using a station, which they do by sleeping, they will wake and signal to all other waiting semaphores that the station is available and free it. It will continue to go through and check to see if their next move matches any other student's state. Every time a student picks up an object, it makes an announcement stating what the object is and what its insturctions are. Every time it enters a new station, it also makes an announcement about which statement it is. If the grad student has to wait for a station, it will also make an announcement about that. These announcements are see in the log output. 
 
-//?? so is a deadlock (like in example below) avoided because each student checks to make sure their second step doesn't match anyone else's state before sleeping in their current state?
-
-A deadlock could occur if two different grad students pick up objects whose first two moves are opposite each other. For example, if grad student 1 has object 1 with needs "Scorch" and then "Shock" and grad student 2 has object 2 which needs "Shock" and then "Scorth", a deadlock would occur when they are both trying to get their objects to the next stattion but there is already an object there occupying it. 
+A deadlock could occur if two different grad students pick up objects whose first two moves are opposite each other. For example, if grad student 1 has object 1 with needs "Scorch" and then "Shock" and grad student 2 has object 2 which needs "Shock" and then "Scorth", a deadlock would occur when they are both trying to get their objects to the next stattion but there is already an object there occupying it. While we understand what a deadlock would look like, we were unable to figure out a way to avoid that specific one. We did not run into any trouble while running the program, so we do not believe the deadlocks would occur very often. 
