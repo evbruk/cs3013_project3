@@ -2,4 +2,4 @@ We approached Problem 1 by using mutexes/condition variables to solve it. We cre
 
 Every time the owner of the kitchen is swithed the global varibale of how many animals have drank is reset to 0, and the new animal type goes through the same cycle. This ensures fairness, because only two animals should have the ability to drink in the kitchen before the kitchen owner switches.
 
-The program will run indefinetly until it is manually killed. 
+The program will run indefinetly until it is manually killed. Once it is killed, statistics about how many times each animal has drank are printed out, becasue they were kept track of. This will help show that the solution ensures fairness since the amounts of times an animal drinks can be checked with the others and compared to ensure no one is getting special treatment. 
