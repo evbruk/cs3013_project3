@@ -5,6 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <time.h>
+#include <signal.h>
 
 #define NUM_DOGS 9
 #define NUM_CATS 13
@@ -21,6 +22,14 @@ pthread_cond_t kitchenSwitch = PTHREAD_COND_INITIALIZER;
 int request_entry(int animalType);
 int bowlsAvailable = 2;
 
+//maybe use this to "prove" fairness?
+struct animalArgs {
+	char * animalName;
+	int timesDrank;
+};
+
+struct animalArgs animalArgsArray[13+9];
+
 
 int print_kitchen()
 {
@@ -32,7 +41,8 @@ int print_kitchen()
 
 void *dog(void * vargp)
 {
-	char * dogName = (char*) vargp;
+	struct animalArgs * arguments = (struct animalArgs *) vargp;
+	char * dogName = arguments->animalName;
 	printf("Dog %s created! \n", dogName);
 	int sleepTime = (rand() % 250) + 50;
 	printf("[%s] Waiting for %d milliseconds before asking to enter the kitchen \n", dogName, sleepTime);
@@ -60,6 +70,7 @@ void *dog(void * vargp)
 				usleep(10000);
 
 				pthread_mutex_lock(&kitchen_lock);
+				arguments->timesDrank++;
 				bowlsAvailable++;
 				printf("[%s] %d dogs have drank \n", dogName, numVisited);
 				//the logic for "leaving" should go here.
@@ -93,7 +104,8 @@ void *dog(void * vargp)
 
 void *cat(void * vargp)
 {
-	char * catName = (char*) vargp;
+	struct animalArgs * arguments = (struct animalArgs *) vargp;
+	char * catName = arguments->animalName;
 	printf("Cat %s created! \n", catName);
 	int sleepTime = ((rand() % 250) + 50);
 	printf("[%s] Waiting for %d milliseconds before asking to enter the kitchen \n", catName, sleepTime);	
@@ -119,6 +131,7 @@ void *cat(void * vargp)
 				usleep(10000);
 
 				pthread_mutex_lock(&kitchen_lock);
+				arguments->timesDrank++;
 				bowlsAvailable++;
 				printf("[%s] %d cats have drank \n", catName, numVisited);
 	
@@ -194,11 +207,34 @@ void *process_kitchen()
 	pthread_mutex_unlock(&kitchen_lock);		
 }
 
+void initAnimalArgs(char * name, int index)
+{
+	animalArgsArray[index].animalName = name;
+	animalArgsArray[index].timesDrank = 0;
+}
+
+void sigint_handler(int sig)
+{
+	printf("Cats Drinking Stats: \n");
+	for(int i = 0; i < 13; i++)
+	{
+		printf("%s: %d \n", animalArgsArray[i].animalName, animalArgsArray[i].timesDrank);	
+	}
+	printf("-------------------------\nDogs Drinking Stats: \n");
+	for(int i = 13; i < (13+9); i++)
+	{
+		printf("%s: %d \n", animalArgsArray[i].animalName, animalArgsArray[i].timesDrank);
+	}
+	exit(0);
+}
+
 int main(int argc, char * argv[])
 {
 	int result = pthread_mutex_init(&kitchen_lock, NULL);
 	petsInKitchen = 0;
 	kitchenOwner = -1;
+	signal(SIGINT, sigint_handler);
+
 	if(result != 0)
 	{
 		printf("problem creating the mutex! \n");	
@@ -226,19 +262,33 @@ int main(int argc, char * argv[])
 	pthread_t munchkin_cat;
 
 	//create cats
-	pthread_create(&chico_cat, NULL, cat, "Chico");
-	pthread_create(&mittens_cat, NULL, cat, "Mittens");
-	pthread_create(&pickles_cat, NULL, cat, "Pickles");
-	pthread_create(&cake_cat, NULL, cat, "Cake");
-	pthread_create(&cheeks_cat, NULL, cat, "Cheeks");
-	pthread_create(&mozz_cat, NULL, cat, "Mozz");
-	pthread_create(&soda_cat, NULL, cat, "Soda");
-	pthread_create(&kitten_cat, NULL, cat, "Kitten");
-	pthread_create(&luna_cat, NULL, cat, "Luna");
-	pthread_create(&violet_cat, NULL, cat, "Violet");
-	pthread_create(&honeymust_cat, NULL, cat, "Honeymust");
-	pthread_create(&buster_cat, NULL, cat, "Buster");
-	pthread_create(&munchkin_cat, NULL, cat, "Munchkin");
+	initAnimalArgs("Chico", 0);
+	initAnimalArgs("Mittens", 1);
+	initAnimalArgs("Pickles", 2);
+	initAnimalArgs("Cake", 3);
+	initAnimalArgs("Cheeks", 4);
+	initAnimalArgs("Mozz", 5);
+	initAnimalArgs("Soda", 6);
+	initAnimalArgs("Kitten", 7);
+	initAnimalArgs("Luna", 8);
+	initAnimalArgs("Violet", 9);
+	initAnimalArgs("Honeymust", 10);
+	initAnimalArgs("Buster", 11);
+	initAnimalArgs("Munchkin", 12);
+	
+	pthread_create(&chico_cat, NULL, cat, &animalArgsArray[0]);
+	pthread_create(&mittens_cat, NULL, cat, &animalArgsArray[1]);
+	pthread_create(&pickles_cat, NULL, cat, &animalArgsArray[2]);
+	pthread_create(&cake_cat, NULL, cat, &animalArgsArray[3]);
+	pthread_create(&cheeks_cat, NULL, cat, &animalArgsArray[4]);
+	pthread_create(&mozz_cat, NULL, cat, &animalArgsArray[5]);
+	pthread_create(&soda_cat, NULL, cat, &animalArgsArray[6]);
+	pthread_create(&kitten_cat, NULL, cat, &animalArgsArray[7]);
+	pthread_create(&luna_cat, NULL, cat, &animalArgsArray[8]);
+	pthread_create(&violet_cat, NULL, cat, &animalArgsArray[9]);
+	pthread_create(&honeymust_cat, NULL, cat, &animalArgsArray[10]);
+	pthread_create(&buster_cat, NULL, cat, &animalArgsArray[11]);
+	pthread_create(&munchkin_cat, NULL, cat, &animalArgsArray[12]);
 	
 	//dogs
 	pthread_t archie_dog;
@@ -251,16 +301,25 @@ int main(int argc, char * argv[])
 	pthread_t yeller_dog;
 	pthread_t brandy_dog;	
 
+	initAnimalArgs("Archie", 13);
+	initAnimalArgs("Toby", 14);
+	initAnimalArgs("Brady", 15);
+	initAnimalArgs("Tom", 16);
+	initAnimalArgs("Buddy", 17);
+	initAnimalArgs("Princess", 18);
+	initAnimalArgs("Rosie", 19);
+	initAnimalArgs("Yeller", 20);
+	initAnimalArgs("Brandy", 21);
 	//create dogs
-	pthread_create(&archie_dog, NULL, dog, "Archie");
-	pthread_create(&toby_dog, NULL, dog, "Toby");
-	pthread_create(&brady_dog, NULL, dog, "Brady");
-	pthread_create(&tom_dog, NULL, dog, "Tom");
-	pthread_create(&buddy_dog, NULL, dog, "Buddy");
-	pthread_create(&princess_dog, NULL, dog, "Princess");
-	pthread_create(&rosie_dog, NULL, dog, "Rosie");
-	pthread_create(&yeller_dog, NULL, dog, "Yeller");
-	pthread_create(&brandy_dog, NULL, dog, "Brandy");
+	pthread_create(&archie_dog, NULL, dog, &animalArgsArray[13]);
+	pthread_create(&toby_dog, NULL, dog, &animalArgsArray[14]);
+	pthread_create(&brady_dog, NULL, dog, &animalArgsArray[15]);
+	pthread_create(&tom_dog, NULL, dog, &animalArgsArray[16]);
+	pthread_create(&buddy_dog, NULL, dog, &animalArgsArray[17]);
+	pthread_create(&princess_dog, NULL, dog, &animalArgsArray[18]);
+	pthread_create(&rosie_dog, NULL, dog, &animalArgsArray[19]);
+	pthread_create(&yeller_dog, NULL, dog, &animalArgsArray[20]);
+	pthread_create(&brandy_dog, NULL, dog, &animalArgsArray[21]);
 	
 	pthread_create(&waterbowl_thread, NULL, process_kitchen, NULL);
 	
